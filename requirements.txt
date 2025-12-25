@@ -1,0 +1,10 @@
+# Required
+numpy>=1.20.0
+torch>=1.9.0
+
+# For TIFF support
+tifffile>=2023.0.0
+
+# Optional: For OpenEXR support
+# OpenEXR
+# Imath
