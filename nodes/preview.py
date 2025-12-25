@@ -17,12 +17,8 @@ class PreviewMultibandImage:
     """
     Create a visual preview of a multi-band image with interactive channel selection.
 
-    Modes:
-    - rgb_first3: Show first 3 channels as RGB
-    - single_channel: Show one channel with colormap
-    - channel_grid: Show all channels in a grid
-
-    The JavaScript UI provides a channel selector dropdown below the preview.
+    Shows a single channel at a time in grayscale. Use the channel_index selector
+    below the preview to switch between channels.
     """
 
     @classmethod
@@ -32,19 +28,11 @@ class PreviewMultibandImage:
                 "multiband": (MULTIBAND_IMAGE,),
             },
             "optional": {
-                "mode": (["rgb_first3", "single_channel"], {
-                    "default": "rgb_first3",
-                    "tooltip": "Visualization mode"
-                }),
                 "channel_index": ("INT", {
                     "default": 0,
                     "min": 0,
                     "max": 1000,
-                    "tooltip": "Channel to show (for single_channel mode)"
-                }),
-                "colormap": (["viridis", "plasma", "gray", "jet"], {
-                    "default": "gray",
-                    "tooltip": "Colormap for single-channel visualization"
+                    "tooltip": "Channel to show"
                 }),
             },
             "hidden": {
@@ -62,55 +50,70 @@ class PreviewMultibandImage:
     def preview(
         self,
         multiband: dict,
-        mode: str = "rgb_first3",
         channel_index: int = 0,
-        colormap: str = "gray",
         prompt=None,
         extra_pnginfo=None
     ):
         samples = multiband['samples']
         num_channels = get_num_channels(multiband)
         channel_names = get_channel_names(multiband)
+        batch_size = samples.shape[0]
 
-        print(f"PreviewMultibandImage: Mode={mode}, Channels={num_channels}, Names={channel_names}")
+        print(f"PreviewMultibandImage: Batch={batch_size}, Channels={num_channels}, Names={channel_names}")
 
-        # Clamp channel_index
+        # Clamp channel_index for the output tensor
         channel_index = min(channel_index, num_channels - 1)
 
-        # Create preview tensor (B, H, W, 3)
-        preview_tensor = create_preview(
-            samples,
-            mode=mode,
-            channel_index=channel_index,
-            colormap=colormap
-        )
-
-        # Save preview images to temp folder for UI display
-        results = []
         output_dir = folder_paths.get_temp_directory()
 
-        for i in range(preview_tensor.shape[0]):
-            # Convert tensor to PIL Image
-            img_arr = (preview_tensor[i].numpy() * 255).astype(np.uint8)
-            img = Image.fromarray(img_arr)
+        # Generate unique prefix for this execution
+        import uuid
+        exec_id = uuid.uuid4().hex[:8]
 
-            # Generate unique filename
-            filename = f"multiband_preview_{i:05d}.png"
-            filepath = os.path.join(output_dir, filename)
+        # Render ALL channels for ALL batch images for dynamic JS switching
+        # Structure: all_channel_images[channel_idx] = [batch0_img, batch1_img, ...]
+        all_channel_images = []
+        for ch_idx in range(num_channels):
+            preview_tensor = create_preview(
+                samples,
+                mode="single_channel",
+                channel_index=ch_idx,
+                colormap="gray"
+            )
 
-            # Save image
-            img.save(filepath, compress_level=4)
+            # Save ALL batch images for this channel
+            channel_batch_images = []
+            for batch_idx in range(batch_size):
+                img_arr = (preview_tensor[batch_idx].numpy() * 255).astype(np.uint8)
+                img = Image.fromarray(img_arr)
 
-            results.append({
-                "filename": filename,
-                "subfolder": "",
-                "type": "temp"
-            })
+                filename = f"multiband_{exec_id}_ch{ch_idx:03d}_b{batch_idx:03d}.png"
+                filepath = os.path.join(output_dir, filename)
+                img.save(filepath, compress_level=4)
+
+                channel_batch_images.append({
+                    "filename": filename,
+                    "subfolder": "",
+                    "type": "temp"
+                })
+
+            all_channel_images.append(channel_batch_images)
+
+        # Return selected channel's images for initial display
+        selected_preview = create_preview(
+            samples,
+            mode="single_channel",
+            channel_index=channel_index,
+            colormap="gray"
+        )
 
         return {
             "ui": {
-                "images": results,
+                "images": all_channel_images[channel_index],  # All batch images for selected channel
+                "all_channel_images": [all_channel_images],   # [channel][batch] structure
                 "channel_names": [channel_names],
+                "current_channel": [channel_index],
+                "batch_size": [batch_size],
             },
-            "result": (preview_tensor,)
+            "result": (selected_preview,)
         }
