@@ -9,6 +9,8 @@ number of channels (segmentation masks, feature maps, spectral bands, etc.)
 along with nodes for loading, saving, previewing, and manipulating them.
 """
 
+import os
+
 from .multiband_types import MULTIBAND_IMAGE
 from .nodes import (
     LoadMultibandImage,
@@ -76,6 +78,6 @@ __all__ = [
     'MULTIBAND_IMAGE',
 ]
 
-WEB_DIRECTORY = None
+WEB_DIRECTORY = os.path.join(os.path.dirname(__file__), "web")
 
 print("ComfyUI-Multiband loaded: 12 nodes registered")
