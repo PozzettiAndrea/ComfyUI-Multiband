@@ -23,16 +23,16 @@ class PreviewMultibandImage:
 
     @classmethod
     def INPUT_TYPES(cls):
-        # Default channel names - will be dynamically updated by JS
-        default_channels = ["channel_0", "channel_1", "channel_2", "channel_3"]
         return {
             "required": {
                 "multiband": (MULTIBAND_IMAGE,),
             },
             "optional": {
-                "channel": (default_channels, {
-                    "default": default_channels[0],
-                    "tooltip": "Channel to show (updates dynamically based on input)"
+                "channel_index": ("INT", {
+                    "default": 0,
+                    "min": 0,
+                    "max": 1000,
+                    "tooltip": "Channel to show"
                 }),
             },
             "hidden": {
@@ -50,7 +50,7 @@ class PreviewMultibandImage:
     def preview(
         self,
         multiband: dict,
-        channel: str = "channel_0",
+        channel_index: int = 0,
         prompt=None,
         extra_pnginfo=None
     ):
@@ -61,15 +61,7 @@ class PreviewMultibandImage:
 
         print(f"PreviewMultibandImage: Batch={batch_size}, Channels={num_channels}, Names={channel_names}")
 
-        # Find channel index from name
-        if channel in channel_names:
-            channel_index = channel_names.index(channel)
-        else:
-            # Fallback: try to parse as index or use 0
-            try:
-                channel_index = int(channel.split("_")[-1])
-            except:
-                channel_index = 0
+        # Clamp channel_index for the output tensor
         channel_index = min(channel_index, num_channels - 1)
 
         output_dir = folder_paths.get_temp_directory()
@@ -77,6 +69,19 @@ class PreviewMultibandImage:
         # Generate unique prefix for this execution
         import uuid
         exec_id = uuid.uuid4().hex[:8]
+
+        # Compute min/max statistics for each channel
+        # Structure: channel_stats[channel_idx] = {"global": [min, max], "per_sample": [[min, max], ...]}
+        channel_stats = []
+        for ch_idx in range(num_channels):
+            ch_data = samples[:, ch_idx, :, :].numpy()  # (B, H, W)
+            global_min = float(ch_data.min())
+            global_max = float(ch_data.max())
+            per_sample = [[float(ch_data[b].min()), float(ch_data[b].max())] for b in range(batch_size)]
+            channel_stats.append({
+                "global": [global_min, global_max],
+                "per_sample": per_sample
+            })
 
         # Render ALL channels for ALL batch images for dynamic JS switching
         # Structure: all_channel_images[channel_idx] = [batch0_img, batch1_img, ...]
@@ -120,6 +125,7 @@ class PreviewMultibandImage:
                 "images": all_channel_images[channel_index],  # All batch images for selected channel
                 "all_channel_images": [all_channel_images],   # [channel][batch] structure
                 "channel_names": [channel_names],
+                "channel_stats": [channel_stats],             # min/max per channel
                 "current_channel": [channel_index],
                 "batch_size": [batch_size],
             },
