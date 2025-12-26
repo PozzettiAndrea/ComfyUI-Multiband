@@ -26,7 +26,7 @@ app.registerExtension({
 
             // Setup channel widget with dynamic switching
             const setupChannelWidget = () => {
-                const channelWidget = node.widgets?.find(w => w.name === "channel_index");
+                const channelWidget = node.widgets?.find(w => w.name === "channel");
                 if (!channelWidget || !node.widgets) return;
 
                 // Move widget to end (below images)
@@ -46,7 +46,12 @@ app.registerExtension({
 
                     // Switch displayed images without re-running node
                     if (node._allChannelImages && node._allChannelImages.length > 0) {
-                        const channelIdx = Math.min(value, node._allChannelImages.length - 1);
+                        // Value is the channel name string
+                        let channelIdx = 0;
+                        if (node._channelNames && node._channelNames.length > 0) {
+                            channelIdx = node._channelNames.indexOf(value);
+                            if (channelIdx < 0) channelIdx = 0;
+                        }
                         const channelBatchImages = node._allChannelImages[channelIdx];
 
                         if (channelBatchImages && channelBatchImages.length > 0) {
@@ -77,12 +82,6 @@ app.registerExtension({
                         }
                     }
                 };
-
-                // Update max value based on available channels
-                if (node._allChannelImages && node._allChannelImages.length > 0) {
-                    channelWidget.options = channelWidget.options || {};
-                    channelWidget.options.max = node._allChannelImages.length - 1;
-                }
             };
 
             // Setup after widgets are created
@@ -103,13 +102,6 @@ app.registerExtension({
                 const numChannels = this._allChannelImages.length;
                 const batchSize = this._allChannelImages[0]?.length || 0;
                 console.log("[MultibandPreview] Loaded", numChannels, "channels x", batchSize, "batch images");
-
-                // Update widget max value
-                const channelWidget = this._channelWidget;
-                if (channelWidget) {
-                    channelWidget.options = channelWidget.options || {};
-                    channelWidget.options.max = numChannels - 1;
-                }
             }
 
             // Store batch size
@@ -117,10 +109,25 @@ app.registerExtension({
                 this._batchSize = message.batch_size[0];
             }
 
-            // Store channel names
+            // Store channel names and update combo widget values
             if (message?.channel_names && message.channel_names.length > 0) {
                 this._channelNames = message.channel_names[0];
                 console.log("[MultibandPreview] Channels:", this._channelNames);
+
+                // Update combo widget with actual channel names
+                const channelWidget = this._channelWidget;
+                if (channelWidget && this._channelNames.length > 0) {
+                    // Update the combo options with real channel names
+                    channelWidget.options = channelWidget.options || {};
+                    channelWidget.options.values = this._channelNames;
+
+                    // If current value is not in new names, set to first channel
+                    if (!this._channelNames.includes(channelWidget.value)) {
+                        channelWidget.value = this._channelNames[0];
+                    }
+
+                    this.setDirtyCanvas(true, true);
+                }
             }
 
             // Store current channel

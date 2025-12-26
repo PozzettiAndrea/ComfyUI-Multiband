@@ -23,16 +23,16 @@ class PreviewMultibandImage:
 
     @classmethod
     def INPUT_TYPES(cls):
+        # Default channel names - will be dynamically updated by JS
+        default_channels = ["channel_0", "channel_1", "channel_2", "channel_3"]
         return {
             "required": {
                 "multiband": (MULTIBAND_IMAGE,),
             },
             "optional": {
-                "channel_index": ("INT", {
-                    "default": 0,
-                    "min": 0,
-                    "max": 1000,
-                    "tooltip": "Channel to show"
+                "channel": (default_channels, {
+                    "default": default_channels[0],
+                    "tooltip": "Channel to show (updates dynamically based on input)"
                 }),
             },
             "hidden": {
@@ -50,7 +50,7 @@ class PreviewMultibandImage:
     def preview(
         self,
         multiband: dict,
-        channel_index: int = 0,
+        channel: str = "channel_0",
         prompt=None,
         extra_pnginfo=None
     ):
@@ -61,7 +61,15 @@ class PreviewMultibandImage:
 
         print(f"PreviewMultibandImage: Batch={batch_size}, Channels={num_channels}, Names={channel_names}")
 
-        # Clamp channel_index for the output tensor
+        # Find channel index from name
+        if channel in channel_names:
+            channel_index = channel_names.index(channel)
+        else:
+            # Fallback: try to parse as index or use 0
+            try:
+                channel_index = int(channel.split("_")[-1])
+            except:
+                channel_index = 0
         channel_index = min(channel_index, num_channels - 1)
 
         output_dir = folder_paths.get_temp_directory()
