@@ -20,6 +20,7 @@ from .nodes import (
     MultibandToImage,
     MaskToMultiband,
     MultibandToMask,
+    BatchToMultiband,
     ComposeMultiband,
     DecomposeMultiband,
     SelectMultibandChannels,
@@ -39,6 +40,7 @@ NODE_CLASS_MAPPINGS = {
     "MultibandToImage": MultibandToImage,
     "MultibandFromMask": MaskToMultiband,
     "MultibandToMask": MultibandToMask,
+    "MultibandFromBatch": BatchToMultiband,
 
     # Compose/Decompose
     "MultibandCompose": ComposeMultiband,
@@ -61,6 +63,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "MultibandToImage": "Multiband to Image",
     "MultibandFromMask": "Mask to Multiband",
     "MultibandToMask": "Multiband to Mask",
+    "MultibandFromBatch": "Batch to Multiband",
 
     # Compose/Decompose
     "MultibandCompose": "Compose Multiband",
@@ -80,4 +83,4 @@ __all__ = [
 
 WEB_DIRECTORY = os.path.join(os.path.dirname(__file__), "web")
 
-print("ComfyUI-Multiband loaded: 12 nodes registered")
+print("ComfyUI-Multiband loaded: 13 nodes registered")
