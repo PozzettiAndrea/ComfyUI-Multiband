@@ -4,6 +4,8 @@
 """Load Multiband Image node."""
 
 import os
+import hashlib
+import folder_paths
 from ..multiband_types import MULTIBAND_IMAGE, numpy_to_multiband
 from ..utils.io_numpy import load_numpy, load_npz
 from ..utils.io_tiff import load_tiff
@@ -19,12 +21,14 @@ class LoadMultibandImage:
 
     @classmethod
     def INPUT_TYPES(cls):
+        input_dir = folder_paths.get_input_directory()
+        files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
+        # Filter to supported multiband formats
+        supported_ext = {'.tiff', '.tif', '.npz', '.npy', '.exr'}
+        files = [f for f in files if os.path.splitext(f)[1].lower() in supported_ext]
         return {
             "required": {
-                "file_path": ("STRING", {
-                    "default": "",
-                    "tooltip": "Path to multiband image file (.npy, .npz, .tiff, .tif, .exr)"
-                }),
+                "image": (sorted(files), {"tooltip": "Multiband image file (.npy, .npz, .tiff, .tif, .exr)"}),
             },
             "optional": {
                 "normalize": ("BOOLEAN", {
@@ -39,7 +43,8 @@ class LoadMultibandImage:
     FUNCTION = "load"
     CATEGORY = "multiband/io"
 
-    def load(self, file_path: str, normalize: bool = True):
+    def load(self, image: str, normalize: bool = True):
+        file_path = folder_paths.get_annotated_filepath(image)
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"File not found: {file_path}")
 
@@ -71,3 +76,17 @@ class LoadMultibandImage:
         print(f"  Names: {names_str[:100]}{'...' if len(names_str) > 100 else ''}")
 
         return (multiband, num_channels, names_str)
+
+    @classmethod
+    def IS_CHANGED(cls, image, normalize=True):
+        image_path = folder_paths.get_annotated_filepath(image)
+        m = hashlib.sha256()
+        with open(image_path, 'rb') as f:
+            m.update(f.read())
+        return m.digest().hex()
+
+    @classmethod
+    def VALIDATE_INPUTS(cls, image, normalize=True):
+        if not folder_paths.exists_annotated_filepath(image):
+            return f"Invalid image file: {image}"
+        return True
