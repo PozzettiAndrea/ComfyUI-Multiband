@@ -19,7 +19,7 @@ from .nodes import (
     ImageToMultiband,
     MultibandToImage,
     MaskToMultiband,
-    MultibandToMask,
+    MultibandToMasks,
     BatchToMultiband,
     ComposeMultiband,
     DecomposeMultiband,
@@ -39,7 +39,7 @@ NODE_CLASS_MAPPINGS = {
     "MultibandFromImage": ImageToMultiband,
     "MultibandToImage": MultibandToImage,
     "MultibandFromMask": MaskToMultiband,
-    "MultibandToMask": MultibandToMask,
+    "MultibandToMasks": MultibandToMasks,
     "MultibandFromBatch": BatchToMultiband,
 
     # Compose/Decompose
@@ -62,7 +62,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "MultibandFromImage": "Image to Multiband",
     "MultibandToImage": "Multiband to Image",
     "MultibandFromMask": "Mask to Multiband",
-    "MultibandToMask": "Multiband to Mask",
+    "MultibandToMasks": "Multiband to Masks",
     "MultibandFromBatch": "Batch to Multiband",
 
     # Compose/Decompose
