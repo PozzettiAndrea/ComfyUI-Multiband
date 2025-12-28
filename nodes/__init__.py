@@ -6,7 +6,7 @@
 from .load import LoadMultibandImage
 from .save import SaveMultibandImage
 from .preview import PreviewMultibandImage
-from .convert import ImageToMultiband, MultibandToImage, MaskToMultiband, MultibandToMask, BatchToMultiband
+from .convert import ImageToMultiband, MultibandToImage, MaskToMultiband, MultibandToMasks, BatchToMultiband
 from .compose import ComposeMultiband
 from .decompose import DecomposeMultiband
 from .operations import SelectMultibandChannels, ConcatMultiband, RenameMultibandChannels
@@ -18,7 +18,7 @@ __all__ = [
     'ImageToMultiband',
     'MultibandToImage',
     'MaskToMultiband',
-    'MultibandToMask',
+    'MultibandToMasks',
     'BatchToMultiband',
     'ComposeMultiband',
     'DecomposeMultiband',

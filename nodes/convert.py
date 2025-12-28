@@ -128,9 +128,12 @@ class MaskToMultiband:
         return (create_multiband(samples, [channel_name]),)
 
 
-class MultibandToMask:
+class MultibandToMasks:
     """
-    Extract a single channel from MULTIBAND_IMAGE as MASK.
+    Extract one or more channels from MULTIBAND_IMAGE as MASK batch.
+
+    Supports single channel ("1") or multiple ("0,1,2,3,4,5,6").
+    Can also auto-detect channels by name containing "mask".
     """
 
     @classmethod
@@ -140,31 +143,56 @@ class MultibandToMask:
                 "multiband": (MULTIBAND_IMAGE,),
             },
             "optional": {
-                "channel": ("INT", {
-                    "default": 0,
-                    "min": 0,
-                    "max": 1000,
-                    "tooltip": "Channel index to extract"
+                "channels": ("STRING", {
+                    "default": "0",
+                    "tooltip": "Channel indices to extract. Single (e.g., '1') or comma-separated (e.g., '0,1,2,3'). Ignored if auto_detect_masks is enabled."
+                }),
+                "auto_detect_masks": ("BOOLEAN", {
+                    "default": False,
+                    "tooltip": "When enabled, automatically finds all channels with 'mask' in their name and returns them. Overrides the 'channels' parameter."
                 }),
             }
         }
 
     RETURN_TYPES = ("MASK",)
-    RETURN_NAMES = ("mask",)
+    RETURN_NAMES = ("masks",)
     FUNCTION = "convert"
     CATEGORY = "multiband/convert"
 
-    def convert(self, multiband: dict, channel: int = 0):
+    def convert(self, multiband: dict, channels: str = "0", auto_detect_masks: bool = False):
         samples = multiband['samples']  # (B, C, H, W)
-        C = samples.shape[1]
+        B, C, H, W = samples.shape
+        channel_names = multiband.get('channel_names', [])
 
-        # Clamp channel index
-        channel = min(max(0, channel), C - 1)
+        if auto_detect_masks and channel_names:
+            # Find all channels with "mask" in their name (case-insensitive)
+            indices = [i for i, name in enumerate(channel_names) if 'mask' in name.lower()]
+            if indices:
+                print(f"MultibandToMasks: Auto-detected {len(indices)} mask channels: {[channel_names[i] for i in indices]}")
+            else:
+                print("MultibandToMasks: No channels with 'mask' in name found, falling back to channel indices")
+                indices = [int(idx.strip()) for idx in channels.split(',') if idx.strip()]
+        else:
+            # Parse channel indices from comma-separated string
+            indices = [int(idx.strip()) for idx in channels.split(',') if idx.strip()]
 
-        # Extract channel as MASK (B, H, W)
-        mask = samples[:, channel, :, :]
+        if not indices:
+            indices = [0]
 
-        return (mask,)
+        # Clamp indices to valid range
+        indices = [min(max(0, idx), C - 1) for idx in indices]
+
+        # Extract channels and stack into batch
+        # For each requested channel, take all batch items
+        # Output shape: (len(indices) * B, H, W) or just (len(indices), H, W) if B=1
+        mask_list = []
+        for idx in indices:
+            mask_list.append(samples[:, idx, :, :])  # (B, H, W)
+
+        # Stack along batch dimension: (N, H, W) where N = len(indices) * B
+        masks = torch.cat(mask_list, dim=0)
+
+        return (masks,)
 
 
 class BatchToMultiband:
