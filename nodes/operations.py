@@ -4,7 +4,10 @@
 """Channel operation nodes for MULTIBAND_IMAGE."""
 
 import torch
+import comfy.utils
 from ..multiband_types import MULTIBAND_IMAGE, create_multiband, get_channel_names, get_num_channels
+
+MAX_RESOLUTION = 16384
 
 
 class SelectMultibandChannels:
@@ -147,3 +150,47 @@ class RenameMultibandChannels:
         print(f"RenameMultibandChannels: Renamed to {new_names}")
 
         return (create_multiband(samples, new_names, multiband.get('metadata')),)
+
+
+class ResizeMultiband:
+    """
+    Resize a MULTIBAND_IMAGE to specific dimensions.
+    Mirrors ComfyUI's built-in ImageScale (Upscale Image) node.
+    """
+
+    upscale_methods = ["nearest-exact", "bilinear", "area", "bicubic", "lanczos"]
+    crop_methods = ["disabled", "center"]
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "multiband": (MULTIBAND_IMAGE,),
+                "upscale_method": (cls.upscale_methods,),
+                "width": ("INT", {"default": 512, "min": 0, "max": MAX_RESOLUTION, "step": 1}),
+                "height": ("INT", {"default": 512, "min": 0, "max": MAX_RESOLUTION, "step": 1}),
+                "crop": (cls.crop_methods,),
+            },
+        }
+
+    RETURN_TYPES = (MULTIBAND_IMAGE,)
+    RETURN_NAMES = ("multiband",)
+    FUNCTION = "upscale"
+    CATEGORY = "multiband/operations"
+
+    def upscale(self, multiband: dict, upscale_method: str, width: int, height: int, crop: str):
+        samples = multiband['samples']  # (B, C, H, W)
+
+        if width == 0 and height == 0:
+            s = samples
+        else:
+            if width == 0:
+                width = max(1, round(samples.shape[3] * height / samples.shape[2]))
+            elif height == 0:
+                height = max(1, round(samples.shape[2] * width / samples.shape[3]))
+
+            s = comfy.utils.common_upscale(samples, width, height, upscale_method, crop)
+
+        print(f"ResizeMultiband: {samples.shape[2]}x{samples.shape[3]} -> {s.shape[2]}x{s.shape[3]}")
+
+        return (create_multiband(s, get_channel_names(multiband), multiband.get('metadata')),)

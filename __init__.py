@@ -26,6 +26,7 @@ from .nodes import (
     SelectMultibandChannels,
     ConcatMultiband,
     RenameMultibandChannels,
+    ResizeMultiband,
 )
 
 
@@ -50,6 +51,7 @@ NODE_CLASS_MAPPINGS = {
     "MultibandSelectChannels": SelectMultibandChannels,
     "MultibandConcat": ConcatMultiband,
     "MultibandRenameChannels": RenameMultibandChannels,
+    "MultibandResize": ResizeMultiband,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -73,6 +75,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "MultibandSelectChannels": "Select Multiband Channels",
     "MultibandConcat": "Concat Multiband",
     "MultibandRenameChannels": "Rename Multiband Channels",
+    "MultibandResize": "Resize Multiband",
 }
 
 __all__ = [
@@ -83,4 +86,4 @@ __all__ = [
 
 WEB_DIRECTORY = os.path.join(os.path.dirname(__file__), "web")
 
-print("ComfyUI-Multiband loaded: 13 nodes registered")
+print("ComfyUI-Multiband loaded: 14 nodes registered")

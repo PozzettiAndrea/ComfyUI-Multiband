@@ -1,7 +1,7 @@
 [project]
 name = "comfyui-multiband"
 description = "Multi-channel image handling for ComfyUI. Work with images that have arbitrary number of channels (segmentation masks, feature maps, spectral bands, etc.)."
-version = "0.0.1"
+version = "0.0.2"
 license = { text = "MIT" }
 classifiers = [
     "License :: OSI Approved :: MIT License",
