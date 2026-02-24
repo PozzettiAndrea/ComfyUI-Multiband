@@ -14,6 +14,7 @@ import os
 from .multiband_types import MULTIBAND_IMAGE
 from .nodes import (
     LoadMultibandImage,
+    LoadMultibandFromPath,
     SaveMultibandImage,
     PreviewMultibandImage,
     ImageToMultiband,
@@ -33,6 +34,7 @@ from .nodes import (
 NODE_CLASS_MAPPINGS = {
     # I/O
     "MultibandLoad": LoadMultibandImage,
+    "MultibandLoadFromPath": LoadMultibandFromPath,
     "MultibandSave": SaveMultibandImage,
     "MultibandPreview": PreviewMultibandImage,
 
@@ -57,6 +59,7 @@ NODE_CLASS_MAPPINGS = {
 NODE_DISPLAY_NAME_MAPPINGS = {
     # I/O
     "MultibandLoad": "Load Multiband Image",
+    "MultibandLoadFromPath": "Load Multiband Image from Path",
     "MultibandSave": "Save Multiband Image",
     "MultibandPreview": "Preview Multiband Image",
 
@@ -86,4 +89,4 @@ __all__ = [
 
 WEB_DIRECTORY = os.path.join(os.path.dirname(__file__), "web")
 
-print("ComfyUI-Multiband loaded: 14 nodes registered")
+print("ComfyUI-Multiband loaded: 15 nodes registered")

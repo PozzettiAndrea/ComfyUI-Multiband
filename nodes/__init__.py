@@ -4,6 +4,7 @@
 """ComfyUI-Multiband node definitions."""
 
 from .load import LoadMultibandImage
+from .load_from_path import LoadMultibandFromPath
 from .save import SaveMultibandImage
 from .preview import PreviewMultibandImage
 from .convert import ImageToMultiband, MultibandToImage, MaskToMultiband, MultibandToMasks, BatchToMultiband
@@ -13,6 +14,7 @@ from .operations import SelectMultibandChannels, ConcatMultiband, RenameMultiban
 
 __all__ = [
     'LoadMultibandImage',
+    'LoadMultibandFromPath',
     'SaveMultibandImage',
     'PreviewMultibandImage',
     'ImageToMultiband',
